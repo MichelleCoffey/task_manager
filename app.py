@@ -25,6 +25,13 @@ def get_tasks():
     return render_template("tasks.html", tasks=tasks)
 
 
+@app.route("/search", methods=["GET", "POST"])
+def search():
+    query = request.form.get("query")
+    tasks = list(mongo.db.tasks.find({"$text": {"$search": query}}))
+    return render_template("tasks.html", tasks=tasks)
+
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -102,7 +109,7 @@ def logout():
 @app.route("/add_task", methods=["GET", "POST"])
 def add_task():
     if request.method == "POST":
-        is_urgent = "on" if request.form.get("is urgent") else "off"
+        is_urgent = "on" if request.form.get("is_urgent") else "off"
         task = {
             "category_name": request.form.get("category_name"),
             "task_name": request.form.get("task_name"),
@@ -112,10 +119,10 @@ def add_task():
             "created_by": session["user"]
         }
         mongo.db.tasks.insert_one(task)
-        flash("Task Sucessfully Added")
+        flash("Task Successfully Added")
         return redirect(url_for("get_tasks"))
-        
-    categories = mongo.db.categories.find().sort("categories_name", 1)
+
+    categories = mongo.db.categories.find().sort("category_name", 1)
     return render_template("add_task.html", categories=categories)
 
 
@@ -138,10 +145,11 @@ def edit_task(task_id):
     categories = mongo.db.categories.find().sort("category_name", 1)
     return render_template("edit_task.html", task=task, categories=categories)
 
+
 @app.route("/delete_task/<task_id>")
 def delete_task(task_id):
     mongo.db.tasks.remove({"_id": ObjectId(task_id)})
-    flash("Task Sucessfully Deleted")
+    flash("Task Successfully Deleted")
     return redirect(url_for("get_tasks"))
 
 
@@ -183,8 +191,6 @@ def delete_category(category_id):
     mongo.db.categories.remove({"_id": ObjectId(category_id)})
     flash("Category Successfully Deleted")
     return redirect(url_for("get_categories"))
-
-
 
 
 if __name__ == "__main__":
